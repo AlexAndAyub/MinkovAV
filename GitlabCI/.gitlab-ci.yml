@@ -1,0 +1,23 @@
+# Стартуем после подтверждения MR в определённую ветку
+# Ожидаем коммит с сообщением Merge branch '<источник>' into '<назначение>'
+# Парсим это с ообщениие, откуда получаем источник и назначение
+
+cumulative:
+  stage: cumulative
+  script:
+    - git fetch && git branch -r
+    - chmod +x git_compere.sh
+    - echo $CI_COMMIT_MESSAGE
+    - |
+      BRANCH1=$(sed -n "s/.*'\(.*\)'.*'\(.*\)'.*$/\2/ p" <<< $CI_COMMIT_MESSAGE)
+      BRANCH2=$(sed -n "s/.*'\(.*\)'.*'\(.*\)'.*$/\1/ p" <<< $CI_COMMIT_MESSAGE)
+      ./git_compere.sh $BRANCH1 $BRANCH2
+  artifacts:
+    name: "$CI_COMMIT_REF_NAME"
+    paths:
+      - $CI_COMMIT_REF_NAME
+    expire_in: 1 day
+  rules:
+    - if: $CI_COMMIT_MESSAGE =~ /^Merge branch '(.*)' into 'rel\.\d{2,}\.\d{1,}(.*)'/i
+  tags:
+    - linux
